@@ -64,7 +64,7 @@
             Gift, Hash, Users, Filter, Trophy, LogOut, Search, 
             AlertTriangle, Lock, Mail, Store, ChevronRight, ChevronDown, CheckCircle, 
             Banknote, CreditCard, QrCode, Clock, Check, Star, Award, MessageCircle,
-            ChevronLeft, LayoutGrid, MoreHorizontal, X, BarChart3, TrendingUp, Package, Clock4, HeartHandshake
+            ChevronLeft, LayoutGrid, MoreHorizontal, X, BarChart3, TrendingUp, Package, Clock4, HeartHandshake, Calendar
         } from 'https://esm.sh/lucide-react@0.292.0';
         import confetti from 'https://esm.sh/canvas-confetti@1.6.0';
 
@@ -116,14 +116,24 @@
             const diffTime = Math.abs(today - saleDate);
             return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         };
+        
+        // Helpers para datas do filtro
+        const getCurrentMonthStart = () => {
+            const d = new Date();
+            return new Date(d.getFullYear(), d.getMonth(), 1).toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+        };
+        const getCurrentMonthEnd = () => {
+            const d = new Date();
+            return new Date(d.getFullYear(), d.getMonth() + 1, 0).toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' }).split('/').reverse().join('-');
+        };
 
-        // --- LINKS DE WHATSAPP COM EMOJIS CODIFICADOS DIRETAMENTE (100% SEGURO) ---
+        // --- LINKS DE WHATSAPP ---
         const getPointMessageLink = (phone, name, points, storeName) => {
             const clean = phone?.replace(/\D/g, '');
             if (!clean) return '#';
             const firstName = name.split(' ')[0];
-            const emojiParty = '%F0%9F%8E%89'; // 🎉
-            const emojiGift = '%F0%9F%8E%81';  // 🎁
+            const emojiParty = '%F0%9F%8E%89'; 
+            const emojiGift = '%F0%9F%8E%81';  
             const text = encodeURIComponent(`Olá ${firstName}, tudo bem? `) + emojiParty + encodeURIComponent(`\nPassando para te avisar que ganhou mais um ponto no nosso *Plano Fidelidade* da *${storeName}*!\n\nVocê já tem *${points} de 7 pontos*. Continue a comprar para resgatar o seu prêmio! `) + emojiGift;
             return `https://wa.me/55${clean}?text=${text}`;
         };
@@ -132,8 +142,8 @@
             const clean = phone?.replace(/\D/g, '');
             if (!clean) return '#';
             const firstName = name.split(' ')[0];
-            const emojiTrophy = '%F0%9F%8F%86';   // 🏆
-            const emojiSparkles = '%E2%9C%A8';    // ✨
+            const emojiTrophy = '%F0%9F%8F%86';   
+            const emojiSparkles = '%E2%9C%A8';    
             const text = encodeURIComponent(`Parabéns ${firstName}! `) + emojiTrophy + encodeURIComponent(`\nCompletou *7 pontos* no Plano Fidelidade da *${storeName}*!\n\nGanhou um crédito de *${formatCurrency(rewardValue)}* para trocar por produtos.\nVenha nos visitar e resgatar o seu prêmio! `) + emojiSparkles;
             return `https://wa.me/55${clean}?text=${text}`;
         };
@@ -142,8 +152,8 @@
             const clean = phone?.replace(/\D/g, '');
             if (!clean) return '#';
             const firstName = name.split(' ')[0];
-            const emojiStar = '%E2%AD%90'; // ⭐
-            const emojiHeart = '%F0%9F%92%96'; // 💖
+            const emojiStar = '%E2%AD%90'; 
+            const emojiHeart = '%F0%9F%92%96'; 
             const text = encodeURIComponent(`Olá ${firstName}, tudo bem? Passando para te agradecer! `) + emojiHeart + encodeURIComponent(`\nVocê é um dos nossos clientes VIP na *${storeName}*. É uma honra ter você com a gente. Como forma de agradecimento, temos algo especial para sua próxima compra! `) + emojiStar;
             return `https://wa.me/55${clean}?text=${text}`;
         };
@@ -152,8 +162,8 @@
             const clean = phone?.replace(/\D/g, '');
             if (!clean) return '#';
             const firstName = name.split(' ')[0];
-            const emojiSad = '%F0%9F%A5%BA'; // 🥺
-            const emojiBag = '%F0%9F%9B%8D%EF%B8%8F'; // 🛍️
+            const emojiSad = '%F0%9F%A5%BA'; 
+            const emojiBag = '%F0%9F%9B%8D%EF%B8%8F'; 
             const text = encodeURIComponent(`Olá ${firstName}! Faz um tempinho que não te vemos por aqui na *${storeName}*. `) + emojiSad + encodeURIComponent(`\nSentimos a sua falta! Chegaram várias novidades incríveis, que tal dar uma olhadinha? Temos uma condição especial para você voltar! `) + emojiBag;
             return `https://wa.me/55${clean}?text=${text}`;
         };
@@ -162,12 +172,54 @@
             const clean = phone?.replace(/\D/g, '');
             if (!clean) return '#';
             const firstName = name.split(' ')[0];
-            const emojiSmile = '%F0%9F%98%8A'; // 😊
+            const emojiSmile = '%F0%9F%98%8A'; 
             const text = encodeURIComponent(`Olá ${firstName}, muito obrigado pela sua compra recente na *${storeName}*! `) + emojiSmile + encodeURIComponent(`\nEsperamos que esteja a gostar dos seus produtos. Está tudo certinho? Qualquer dúvida ou se precisar de ajuda, estamos à disposição!`);
             return `https://wa.me/55${clean}?text=${text}`;
         };
 
         // --- COMPONENTES DE UI ---
+        const DateRangeFilter = ({ period, startDate, endDate, onPeriodChange, onStartChange, onEndChange }) => {
+            const [expanded, setExpanded] = useState(false);
+            return (
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6">
+                    <div className="flex justify-between items-center cursor-pointer" onClick={() => setExpanded(!expanded)}>
+                        <div className="flex items-center gap-2">
+                            <Calendar size={18} className="text-indigo-500" />
+                            <span className="text-sm font-bold text-slate-700">
+                                Filtro de Período: {period === 'month' ? "Mês Atual" : "Personalizado"}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <span className="text-xs text-slate-400 hidden sm:block">
+                                {formatDate(startDate)} a {formatDate(endDate)}
+                            </span>
+                            <ChevronDown size={16} className={`text-slate-300 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                        </div>
+                    </div>
+                    {expanded && (
+                        <div className="mt-4 pt-4 border-t border-slate-50 space-y-3 animate-fade-in">
+                            <div className="flex gap-2">
+                                <button onClick={() => onPeriodChange('month')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${period === 'month' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Mês Atual</button>
+                                <button onClick={() => onPeriodChange('custom')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors ${period === 'custom' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Personalizar Datas</button>
+                            </div>
+                            {period === 'custom' && (
+                                <div className="grid grid-cols-2 gap-3 mt-3">
+                                    <div>
+                                        <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Data Inicial</label>
+                                        <input type="date" className="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-600" value={startDate} onChange={e => onStartChange(e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Data Final</label>
+                                        <input type="date" className="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-slate-600" value={endDate} onChange={e => onEndChange(e.target.value)} />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
         const Pagination = ({ totalItems, itemsPerPage, currentPage, onPageChange }) => {
             const totalPages = Math.ceil(totalItems / itemsPerPage);
             const [showAllPagesModal, setShowAllPagesModal] = useState(false);
@@ -366,30 +418,45 @@
 
         // --- DASHBOARD CRM (INDICADORES) ---
         const DashboardCRM = ({ customers, sales, storeName }) => {
-            const stats = useMemo(() => {
-                let totalRevenue = 0;
-                let totalSalesCount = sales.length;
-                let activeCustomersSet = new Set();
-                
-                // Processamento de Produtos
-                let productMap = {};
+            
+            // Estado do Filtro
+            const [dashPeriod, setDashPeriod] = useState('month');
+            const [dashStartDate, setDashStartDate] = useState(getCurrentMonthStart());
+            const [dashEndDate, setDashEndDate] = useState(getCurrentMonthEnd());
 
-                // Processamento de Clientes
-                let customerMap = {};
-                customers.forEach(c => {
-                    customerMap[c.id] = { ...c, totalSpent: 0, purchaseCount: 0, lastPurchase: null };
+            useEffect(() => {
+                if (dashPeriod === 'month') {
+                    setDashStartDate(getCurrentMonthStart());
+                    setDashEndDate(getCurrentMonthEnd());
+                }
+            }, [dashPeriod]);
+
+            // Processamento dos dados com base no filtro
+            const stats = useMemo(() => {
+                // 1. Filtrar Vendas pelo Período (Apenas para KPIs, Produtos e VIPs)
+                const periodSales = sales.filter(s => {
+                    const saleDate = s.saleDate.split('T')[0];
+                    return saleDate >= dashStartDate && saleDate <= dashEndDate;
                 });
 
-                sales.forEach(s => {
+                let totalRevenue = 0;
+                let activeCustomersSet = new Set();
+                let productMap = {};
+                let customerPeriodMap = {};
+
+                // Inicializar mapa de clientes para o período
+                customers.forEach(c => {
+                    customerPeriodMap[c.id] = { ...c, totalSpent: 0, purchaseCount: 0 };
+                });
+
+                // Calcular vendas do período
+                periodSales.forEach(s => {
                     totalRevenue += s.totalPrice || 0;
                     if (s.customerId) activeCustomersSet.add(s.customerId);
 
-                    if (customerMap[s.customerId]) {
-                        customerMap[s.customerId].totalSpent += s.totalPrice || 0;
-                        customerMap[s.customerId].purchaseCount += 1;
-                        if (!customerMap[s.customerId].lastPurchase || s.saleDate > customerMap[s.customerId].lastPurchase) {
-                            customerMap[s.customerId].lastPurchase = s.saleDate;
-                        }
+                    if (customerPeriodMap[s.customerId]) {
+                        customerPeriodMap[s.customerId].totalSpent += s.totalPrice || 0;
+                        customerPeriodMap[s.customerId].purchaseCount += 1;
                     }
 
                     if (s.items && Array.isArray(s.items)) {
@@ -404,23 +471,40 @@
                     }
                 });
 
+                const totalSalesCount = periodSales.length;
                 const averageTicket = totalSalesCount > 0 ? totalRevenue / totalSalesCount : 0;
                 
                 const topProducts = Object.values(productMap)
                     .sort((a, b) => b.quantity - a.quantity)
                     .slice(0, 5); 
 
-                const allMappedCustomers = Object.values(customerMap).filter(c => c.purchaseCount > 0);
-
-                const vipCustomers = [...allMappedCustomers]
+                const vipCustomers = Object.values(customerPeriodMap)
+                    .filter(c => c.purchaseCount > 0)
                     .sort((a, b) => b.totalSpent - a.totalSpent)
                     .slice(0, 10);
 
-                const recentCustomers = [...allMappedCustomers]
+                // 2. INDICADORES GLOBAIS (Não dependem do filtro de datas, dependem do status "real" do cliente)
+                let customerGlobalMap = {};
+                customers.forEach(c => {
+                    customerGlobalMap[c.id] = { ...c, lastPurchase: null, purchaseCount: 0 };
+                });
+
+                sales.forEach(s => {
+                    if (customerGlobalMap[s.customerId]) {
+                        customerGlobalMap[s.customerId].purchaseCount += 1;
+                        if (!customerGlobalMap[s.customerId].lastPurchase || s.saleDate > customerGlobalMap[s.customerId].lastPurchase) {
+                            customerGlobalMap[s.customerId].lastPurchase = s.saleDate;
+                        }
+                    }
+                });
+
+                const allGlobalCustomers = Object.values(customerGlobalMap).filter(c => c.purchaseCount > 0);
+
+                const recentCustomers = [...allGlobalCustomers]
                     .sort((a, b) => new Date(b.lastPurchase) - new Date(a.lastPurchase))
                     .slice(0, 10);
 
-                const idleCustomers = [...allMappedCustomers]
+                const idleCustomers = [...allGlobalCustomers]
                     .filter(c => calculateDaysAgo(c.lastPurchase) > 30)
                     .sort((a, b) => calculateDaysAgo(b.lastPurchase) - calculateDaysAgo(a.lastPurchase))
                     .slice(0, 10);
@@ -429,31 +513,41 @@
                     totalRevenue, totalSalesCount, averageTicket, activeCustomers: activeCustomersSet.size,
                     topProducts, vipCustomers, recentCustomers, idleCustomers
                 };
-            }, [customers, sales]);
+            }, [customers, sales, dashStartDate, dashEndDate]);
 
             return (
                 <div className="space-y-6 animate-fade-in">
                     
-                    {/* Top KPIs */}
+                    {/* Filtro de Datas Global do Dashboard */}
+                    <DateRangeFilter 
+                        period={dashPeriod} 
+                        startDate={dashStartDate} 
+                        endDate={dashEndDate} 
+                        onPeriodChange={setDashPeriod} 
+                        onStartChange={setDashStartDate} 
+                        onEndChange={setDashEndDate} 
+                    />
+
+                    {/* Top KPIs (Afetados pelo Filtro) */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center transition-shadow hover:shadow-md">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><TrendingUp size={18}/></div>
-                                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Faturação Total</p>
+                                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Faturação do Período</p>
                             </div>
                             <h3 className="text-xl sm:text-2xl font-black text-slate-800 truncate">{formatCurrency(stats.totalRevenue)}</h3>
                         </div>
                         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center transition-shadow hover:shadow-md">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><Banknote size={18}/></div>
-                                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Ticket Médio</p>
+                                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Ticket Médio (Período)</p>
                             </div>
                             <h3 className="text-xl sm:text-2xl font-black text-slate-800 truncate">{formatCurrency(stats.averageTicket)}</h3>
                         </div>
                         <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center transition-shadow hover:shadow-md">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><Package size={18}/></div>
-                                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Vendas</p>
+                                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">Vendas no Período</p>
                             </div>
                             <h3 className="text-xl sm:text-2xl font-black text-slate-800">{stats.totalSalesCount}</h3>
                         </div>
@@ -467,16 +561,18 @@
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* COLUNA 1: Produtos e VIPs */}
+                        {/* COLUNA 1: Produtos e VIPs (Afetados pelo Filtro) */}
                         <div className="space-y-6 lg:col-span-1">
                             {/* Produtos Mais Vendidos */}
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                                <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex items-center gap-2">
-                                    <Trophy size={20} className="text-yellow-500" />
-                                    <h3 className="font-bold text-slate-800">Top 5 Produtos</h3>
+                                <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Trophy size={20} className="text-yellow-500" />
+                                        <h3 className="font-bold text-slate-800">Top 5 Produtos</h3>
+                                    </div>
                                 </div>
                                 <div className="p-4 space-y-3">
-                                    {stats.topProducts.length === 0 ? <p className="text-sm text-slate-400">Nenhum dado.</p> : 
+                                    {stats.topProducts.length === 0 ? <p className="text-sm text-slate-400">Nenhum dado neste período.</p> : 
                                      stats.topProducts.map((p, idx) => (
                                         <div key={idx} className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
                                             <div className="flex items-center gap-3">
@@ -494,12 +590,14 @@
 
                             {/* Ranking VIP */}
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                                <div className="p-4 border-b border-slate-50 bg-indigo-50/50 flex items-center gap-2">
-                                    <Star size={20} className="text-indigo-500 fill-indigo-500" />
-                                    <h3 className="font-bold text-indigo-900">Ranking VIP (Top 10)</h3>
+                                <div className="p-4 border-b border-slate-50 bg-indigo-50/50 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Star size={20} className="text-indigo-500 fill-indigo-500" />
+                                        <h3 className="font-bold text-indigo-900">VIPs do Período (Top 10)</h3>
+                                    </div>
                                 </div>
                                 <div className="p-0">
-                                    {stats.vipCustomers.length === 0 ? <p className="p-4 text-sm text-slate-400">Nenhum cliente com compras.</p> : 
+                                    {stats.vipCustomers.length === 0 ? <p className="p-4 text-sm text-slate-400">Nenhum cliente com compras no período.</p> : 
                                      stats.vipCustomers.map((c, idx) => (
                                         <div key={c.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors gap-3">
                                             <div className="flex items-center gap-3">
@@ -520,7 +618,7 @@
                             </div>
                         </div>
 
-                        {/* COLUNA 2 e 3: Recentes e Ausentes */}
+                        {/* COLUNA 2 e 3: Recentes e Ausentes (Globais, não mudam com a data) */}
                         <div className="space-y-6 lg:col-span-2">
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -529,7 +627,10 @@
                                     <div className="p-4 border-b border-slate-50 bg-red-50/50 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <Clock4 size={20} className="text-red-500" />
-                                            <h3 className="font-bold text-red-900">Ausentes (+30 dias)</h3>
+                                            <div>
+                                                <h3 className="font-bold text-red-900">Ausentes (+30 dias)</h3>
+                                                <p className="text-[10px] text-red-600">Tempo real sem comprar (Global)</p>
+                                            </div>
                                         </div>
                                         <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold">{stats.idleCustomers.length}</span>
                                     </div>
@@ -558,7 +659,10 @@
                                     <div className="p-4 border-b border-slate-50 bg-emerald-50/50 flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <HeartHandshake size={20} className="text-emerald-500" />
-                                            <h3 className="font-bold text-emerald-900">Compras Recentes</h3>
+                                            <div>
+                                                <h3 className="font-bold text-emerald-900">Últimas Compras</h3>
+                                                <p className="text-[10px] text-emerald-700">Tempo real (Global)</p>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="p-0 flex-1 overflow-y-auto max-h-[600px] hide-scrollbar">
@@ -1222,5 +1326,3 @@
     </script>
 </body>
 </html>
-
-
